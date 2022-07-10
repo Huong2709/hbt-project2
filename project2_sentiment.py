@@ -8,7 +8,7 @@ import pickle
 
 # thu vien Tokenizer Viet
 from pyvi import ViTokenizer, ViPosTagger
-from wordcloud import WordCloud
+# from wordcloud import WordCloud
 
 # data pre-processing libraries
 import emoji
