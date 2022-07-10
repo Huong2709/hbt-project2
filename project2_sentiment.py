@@ -8,9 +8,12 @@ import pickle
 
 # thu vien Tokenizer Viet
 from pyvi import ViTokenizer, ViPosTagger
-# from wordcloud import WordCloud
+from underthesea import word_tokenize, pos_tag, sent_tokenize
+from wordcloud import WordCloud
 
 # data pre-processing libraries
+import regex
+import demoji
 import emoji
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.model_selection import train_test_split  
@@ -74,22 +77,101 @@ elif choice == 'Summary about Projects':
 elif choice == 'Sentiment Analysis':
 
 #----------------------------------------------------------------------------------------------------
-    # 3.1. pre_processing
     # if __name__=='__main__':
-    #     model_pre = pickle.load(open('model/Problem1_model_pre_processing.sav', 'rb'))
-    #     model_scaler = pickle.load(open('model/Problem1_model_standardizing.sav', 'rb'))
-        # model_ex = pickle.load(open('model/Problem1_ex_model.sav', 'rb'))
-        # model_rf = pickle.load(open('model/Problem1_rf_model.sav', 'rb'))
-        # model_bg = pickle.load(open('model/Problem1_bg_model.sav', 'rb'))
-        # model_kn = pickle.load(open('model/Problem1_kn_model.sav', 'rb'))
-        # model_ann = load_model('model/Problem1_ANN_model.h5')
+    #     model_pre = pickle.load(open('model/Project2_model_pre_processing.sav', 'rb'))
+    #     model_predict = pickle.load(open('model/Project2_mb_model_prediction.sav', 'rb'))
+    def data_cleaning(data):
+        df = data.copy()
 
+        # remove unnamed columns
+        df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
+        # feature "review_text"
+        df_clean = df
+        document = df_clean['review_text']
 
-    if __name__=='__main__':
-        model_pre = pickle.load(open('model/Project2_model_pre_processing.sav', 'rb'))
-        model_predict = pickle.load(open('model/Project2_mb_model_prediction.sav', 'rb'))
+        # load edited emojicon
+        file = open('lib/files/emojicon.txt', 'r', encoding="utf8")
+        emoji_lst = file.read().split('\n')
+        file.close()
 
+        emoji_dict = {}
+        lst_key = []
+        lst_value = []
+        for line in emoji_lst:
+            key, value = line.split('\t')
+            lst_key.append(key)
+            lst_value.append(value)
+            emoji_dict[key] = str(value)
+
+        # load chosen words
+        file = open('lib/files/chosen_words_full.txt', 'r', encoding="utf8")
+        lst_chosen_words = file.read().split('\n')
+        file.close()
+
+        lst_spec_symbol = ['~','`','!','@','#','$','%','^','&','*','(',')','-','=','+',   '[','{','}','}','\\','|',';',':','"',     ',','<','.','>','/','?']
+        lst_find_words = ['không ','ko ','kg ','chẳng ','chả ']
+        lst_replace_words = ['không_','ko_','kg_','chẳng_','chả_']
+
+        lst_document = []
+        for doc in document:
+            doc = doc.lower()
+
+            # TEXT CLEANING
+            # replace emojicons
+            for i in range(len(lst_key)):
+                doc = doc.replace(lst_key[i], ' '+lst_value[i])
+            for j in doc:
+                if j in emoji.UNICODE_EMOJI['en']: 
+                    doc = doc.replace(j, '')
+
+            # word tokenize: sạch sẽ => sạch_sẽ
+            doc = word_tokenize(doc, format='text')
+
+            # remove special symbols
+            rx = '[' + re.escape(''.join(lst_spec_symbol)) + ']' 
+            doc = re.sub(rx, '', doc)
+
+            doc = doc.replace('  ',' ')
+            doc = doc.replace(' _',' ')
+            doc = doc.replace('_ ',' ')
+
+            # replace 'không ' to 'không_' co link words, v.v...
+            for i in range(len(lst_find_words)):
+                doc = doc.replace(lst_find_words[i], lst_replace_words[i]) 
+
+            # remove stop_words
+            lst_words = []
+            for j in doc.split(' '):
+                if j in lst_chosen_words: lst_words.append(j)
+            doc = ' '.join(lst_words)  
+
+            lst_document.append(doc)
+
+        df_clean['review_text_clean'] = lst_document
+        # df_clean = df_clean.dropna()
+
+        # create "review_score_new"
+        df_clean['review_score_new'] = 0
+        df_clean.loc[df_clean['review_score'] >= 6.8, 'review_score_new'] = 1
+        df_clean['review_score_new'] = df_clean['review_score_new'].astype('int32')
+
+        # load encoder model
+        cv = pickle.load(open('model/CountVectorizer_self_model.sav','rb'))
+
+        # COUNTVECTORIZER
+        # apply CountVectorizer
+        # cv_transformed = cv.transform(df_clean['review_text_clean'].dropna())
+        cv_transformed = cv.transform(df_clean['review_text_clean'])
+        cv_transformed = cv_transformed.toarray()
+        df_clean_cv = pd.DataFrame(cv_transformed, columns=cv.get_feature_names())
+        df_clean_cv = pd.concat([df_clean.reset_index(), df_clean_cv], axis=1)
+
+        # CREATE X, y   
+        X = df_clean_cv.iloc[:,6:]
+        y = df_clean_cv['review_score_new']
+
+        return X, y
 
 
 
@@ -202,8 +284,10 @@ elif choice == 'Sentiment Analysis':
         # content
             if choice3_model == 'ExtraTreesRegressor':  
 
+                model_predict = pickle.load(open('model/Project2_mb_model_prediction.sav', 'rb'))
+
                 # prediction
-                X_new, y_new = model_pre.transform(uploaded_data)
+                X_new, y_new = data_cleaning(uploaded_data)
                 yhat = model_predict.predict(X_new)
 
                 result_df = pd.concat([uploaded_data[['restaurant','review_text']], pd.DataFrame(yhat)], axis=1)
