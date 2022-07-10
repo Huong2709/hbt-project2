@@ -20,7 +20,6 @@ from sklearn.model_selection import train_test_split
 # model
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 
-
 # evaluation libraries
 from sklearn.metrics import classification_report, confusion_matrix 
 from sklearn import metrics
@@ -32,6 +31,8 @@ import re
 import import_ipynb
 from lib.function_lib import *
 
+
+######################################################################################################
 raw_data = pd.read_csv('data/data_Foody.csv')
 
 
@@ -40,7 +41,7 @@ st.sidebar.markdown("<h1 style='text-align: left; color: Black;'>CATALOG</h1>", 
 menu = ["Introduction","Summary about Projects", 'Sentiment Analysis', "Conclusion and Next steps"]
 choice = st.sidebar.radio("Choose one of objects below", menu)
 
-st.write("<h1 style='text-align: left; color: Red; font-size:40px'>AVOCADO HASS PRICE PREDICTION</h1>", unsafe_allow_html=True)
+st.write("<h1 style='text-align: left; color: Red; font-size:40px'>FOOD SENTIMENT ANALYSIS</h1>", unsafe_allow_html=True)
 
 
 # 1. Introduction
@@ -74,6 +75,7 @@ elif choice == 'Summary about Projects':
 
 #####################################################################################################
 
+# 3. Sentiment Analysis
 elif choice == 'Sentiment Analysis':
 
 #----------------------------------------------------------------------------------------------------
@@ -173,8 +175,6 @@ elif choice == 'Sentiment Analysis':
 
         return X, y
 
-
-
 #----------------------------------------------------------------------------------------------------
 
     # content
@@ -184,47 +184,51 @@ elif choice == 'Sentiment Analysis':
     menu3_input = ['Input data','Load file']
     choice3_input = st.sidebar.selectbox('Choose the way to input data', menu3_input)
 
-    menu3_model = ['ExtraTreesRegressor','RandomForestRefressor']
+    menu3_model = ['Model 1','Model 2']
     choice3_model = st.sidebar.selectbox('Choose the model', menu3_model)
 
 
     if choice3_input =='Input data':
         # sidebar - input
-        fea_type = st.sidebar.radio("Type",['conventional','organic'])
-        fea_region = st.sidebar.selectbox("Region", ['region1','region2'])
-        fea_PLU_4046 = st.sidebar.number_input("Volume of PLU 4046", value = 1.00, format="%.2f", step=0.01)
-        fea_PLU_4225 = st.sidebar.number_input("Volume of PLU 4225", value = 1.00, format="%.2f", step=0.01)
-        fea_PLU_4770 = st.sidebar.number_input("Volume of PLU 4770", value = 1.00, format="%.2f", step=0.01)
-        fea_Total_Volume = st.sidebar.number_input("Total volume", value = 1.00, format="%.2f", step=0.01)
-        fea_Small_Bags = st.sidebar.number_input("Number of Small bags", value = 1.00, format="%.2f", step=0.01)
-        fea_Large_Bags = st.sidebar.number_input("Number of Large bags", value = 1.00, format="%.2f", step=0.01)
-        fea_XLarge_Bags = st.sidebar.number_input("Number of XLarge bags", value = 1.00, format="%.2f", step=0.01)
-        fea_Total_Bags = st.sidebar.number_input("Total bags", value = 1.00, format="%.2f", step=0.01)
-
-        # show results
-        if st.sidebar.button("Show predict results"):
-  
+        fea_restaurant = st.text_input('Restaurant name') 
+        fea_review_text = st.text_input('Review text')
+        
 
         # content
-            if choice3_model == 'ExtraTreesRegressor':
+        if choice3_model == 'Model 1':
+        
+            # prediction - CODE HERE
             
-                # prediction
-             
 
-                # show results
+            # show results - CODE HERE
+            if st.button("Show predict results"):
                 st.write('not done')
-                       
+                    
 
 
-            elif choice3_model == 'RandomForestRefressor':
+        elif choice3_model == 'Model 2':
 
-                # prediction
+            model_predict = pickle.load(open('model/Project2_mb_model_prediction.sav', 'rb'))
 
+            # prediction
+            lst_input = [fea_restaurant, fea_review_text, 0.5]
+            col_names = ['restaurant','review_text','review_score']
+            input_data = pd.DataFrame(lst_input)
+            input_data = input_data.T
+            input_data.columns = col_names
 
-                # show results
+            X_new, y_new = data_cleaning(input_data)
+            yhat = model_predict.predict(X_new)
 
-                st.write('not done')
+            result_df = pd.concat([input_data[['restaurant','review_text']], pd.DataFrame(yhat)], axis=1)
+            result_df.columns = ['restaurant','review_text','sentiment']
+            result_df.loc[result_df['sentiment']==0, 'sentiment'] = 'positive'
+            result_df.loc[result_df['sentiment']==1, 'sentiment'] = 'negative'
 
+            # show results
+            if st.button("Show predict results"):
+                st.write('Sentiment')
+                st.dataframe(result_df)
 
             
         else:
@@ -262,8 +266,6 @@ elif choice == 'Sentiment Analysis':
         # upload file
         try:
             uploaded_file = st.sidebar.file_uploader('Upload data', type = ['csv'])
-            # dir_file = 'material/' + uploaded_file.name
-            # st.write(uploaded_file)
 
         except Exception as failGeneral:        
             print("Fail system, please call developer...", type(failGeneral).__name__)
@@ -276,17 +278,23 @@ elif choice == 'Sentiment Analysis':
         # show results
         if st.sidebar.button("Show predict results"):
 
-            # uploaded_data = pd.read_csv(uploaded_file)
-            uploaded_data = raw_data.head(5)
-
-
+            uploaded_data = pd.read_csv(uploaded_file)
             
         # content
-            if choice3_model == 'ExtraTreesRegressor':  
+            if choice3_model == 'Model 1':  
+
+                # prediction - CODE HERE
+                
+
+                # download results - CODE HERE
+                st.write('not done')
+
+            elif choice3_model == 'Model 2':
 
                 model_predict = pickle.load(open('model/Project2_mb_model_prediction.sav', 'rb'))
 
                 # prediction
+                uploaded_data['review_score'] = 0.5
                 X_new, y_new = data_cleaning(uploaded_data)
                 yhat = model_predict.predict(X_new)
 
@@ -298,41 +306,10 @@ elif choice == 'Sentiment Analysis':
 
                 # show results
                 st.write("<h5 style='text-align: left; color: Black;'>Input information:</h5>", unsafe_allow_html=True)
-                st.write("1. Model name: ExtraTreesRegressor")
-                # st.markdown("2. Input file name: " + str(uploaded_file.name))
-                st.markdown("3. Number of distinct rows: " + str(uploaded_data.shape[0]))
-                st.markdown("4. Number of columns: " + str(uploaded_data.shape[1]))
-                st.write("<h5 style='text-align: left; color: Black;'>Prediction results:</h5>", unsafe_allow_html=True)
-                st.dataframe(result_df)
-                download_results = result_df.to_csv().encode('utf-8')
-
-                # download results
-                st.download_button(label="Download data as CSV",
-                                    data=download_results,
-                                    file_name='predict_results.csv',
-                                    mime='text/csv',
-                                    )
-
-            elif choice3_model == 'RandomForestRefressor':
-
-
-                # prediction
-                X_new, y_new = model_pre.transform(uploaded_data)
-                yhat = model_predict.predict(X_new)
-
-                result_df = pd.concat([uploaded_data[['restaurant','review_text']], pd.DataFrame(yhat)], axis=1)
-                result_df.columns = ['restaurant','review_text','sentiment']
-                result_df.loc[result_df['sentiment']==0, 'sentiment'] = 'positive'
-                result_df.loc[result_df['sentiment']==1, 'sentiment'] = 'negative'
-                # pd.set_option('display.max_colwidth', None)
-                st.write(result_df)
-
-                # show results
-                st.write("<h5 style='text-align: left; color: Black;'>Input information:</h5>", unsafe_allow_html=True)
-                st.write("1. Model name: ExtraTreesRegressor")
+                st.write("1. Model name: Model 2")
                 st.markdown("2. Input file name: " + str(uploaded_file.name))
                 st.markdown("3. Number of distinct rows: " + str(uploaded_data.shape[0]))
-                st.markdown("4. Number of columns: " + str(uploaded_data.shape[1]))
+                st.markdown("4. Number of columns: " + str(uploaded_data.shape[1]-1))
                 st.write("<h5 style='text-align: left; color: Black;'>Prediction results:</h5>", unsafe_allow_html=True)
                 st.dataframe(result_df)
                 download_results = result_df.to_csv().encode('utf-8')
@@ -340,7 +317,7 @@ elif choice == 'Sentiment Analysis':
                 # download results
                 st.download_button(label="Download data as CSV",
                                     data=download_results,
-                                    file_name='predict_results.csv',
+                                    file_name='predict_results_model2.csv',
                                     mime='text/csv',
                                     )
 
@@ -364,15 +341,13 @@ elif choice == 'Sentiment Analysis':
             
             st.write("**Step 5: In case of inputing features by loading csv file, if you want to download predict results, click 'Download data as CSV'**")
             st.image('material/Guidance_6.jpg')
-       
-
 
     
 
 
 
 
-# 5. Conclusion and Next steps
+# 4. Conclusion and Next steps
 elif choice == 'Conclusion and Next steps':
 
     st.header('CONCLUSION AND NEXT STEPS')
