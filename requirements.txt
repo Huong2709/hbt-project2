@@ -1,0 +1,22 @@
+streamlit
+pandas
+numpy
+datetime
+matplotlib
+scipy
+# shap
+seaborn
+# sklearn
+scikit-learn
+# pmdarima
+# arch
+# tslearn
+statsmodels
+# wheel   ##==0.24.0##
+import-ipynb
+ipynb
+
+pyvi
+underthesea
+underthesea
+emoji
