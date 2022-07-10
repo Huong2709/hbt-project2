@@ -1,5 +1,6 @@
 # Import library
 from nbformat import write
+from st_aggrid import AgGrid
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -311,7 +312,8 @@ elif choice == 'Sentiment Analysis':
                 st.markdown("3. Number of distinct rows: " + str(uploaded_data.shape[0]))
                 st.markdown("4. Number of columns: " + str(uploaded_data.shape[1]-1))
                 st.write("<h5 style='text-align: left; color: Black;'>Prediction results:</h5>", unsafe_allow_html=True)
-                st.dataframe(result_df)
+                # st.dataframe(result_df)
+                AgGrid(result_df, height=500, fit_columns_on_grid_load=True)
                 download_results = result_df.to_csv().encode('utf-8')
 
                 # download results
